@@ -1,0 +1,53 @@
+{
+    "name": "super-duper-ecommerce-monorepo",
+    "version": "0.1.0",
+    "private": true,
+    "packageManager": "pnpm@8.15.1",
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ],
+    "scripts": {
+        "preflight": "ts-node scripts/preflight.ts",
+        "db:reset": "ts-node scripts/truncate-db.ts",
+        "dev": "pnpm run preflight && turbo run dev --parallel",
+        "build": "turbo run build --parallel",
+        "lint": "turbo run lint",
+        "test": "turbo run test",
+        "e2e": "cypress open",
+        "e2e:ci": "cypress run --browser chrome",
+        "a11y": "lighthouse-ci https://localhost:3000 --preset=desktop",
+        "db:migrate": "prisma migrate deploy",
+        "seed": "ts-node prisma/seed.ts",
+        "storybook": "turbo run storybook --filter=apps/storybook",
+        "build-storybook": "turbo run build-storybook --filter=apps/storybook",
+        "release": "semantic-release"
+    },
+    "engines": {
+        "node": ">=20"
+    },
+    "devDependencies": {
+        "@types/node": "^20.3.0",
+        "dotenv": "^10.0.0",
+        "eslint": "^9.0.0",
+        "husky": "^9.0.0",
+        "prettier": "^3.0.0",
+        "prisma": "^6.9.0",
+        "semantic-release": "^22.0.0",
+        "ts-node": "^10.9.1",
+        "turbo": "^2.0.0",
+        "typescript": "^5.4.0"
+    },
+    "pnpm": {
+        "overrides": {
+            "react": "19.0.0",
+            "react-dom": "19.0.0"
+        }
+    },
+    "dependencies": {
+        "@prisma/client": "^6.9.0",
+        "next": "^15.3.3",
+        "react": "19.0.0",
+        "react-dom": "19.0.0"
+    }
+}

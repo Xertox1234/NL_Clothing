@@ -1,0 +1,101 @@
+# 📈 System Flowcharts
+
+> **Note to AI agents:** Copy any `<mermaid>` code block into a mermaid renderer (e.g., `npx @mermaid-js/mermaid-cli`) to export **.svg** files inside the `/flowcharts` directory. Each diagram already includes a suggested filename.
+
+---
+
+## 1️⃣ User Journey: Browse → Checkout
+
+<small>Output: **user-journey.svg**</small>
+
+```mermaid
+flowchart TD
+    A[Visitor lands on Home] --> B[Product List]
+    B --> C[Product Detail]
+    C -->|Add to Cart| D[Cart]
+    D -->|Proceed to Checkout| E[Sign‑In / Guest]
+    E --> F[Shipping & Billing]
+    F --> G[Order Review]
+    G --> H[Payment Gateway]
+    H --> I[Order Confirmation]
+    I --> J[Thank‑You + Toast]
+    J --> K[Email Receipt]
+```
+
+---
+
+## 2️⃣ Component Interaction: Web ↔ API ↔ DB
+
+<small>Output: **component-interaction.svg**</small>
+
+```mermaid
+sequenceDiagram
+    participant UI as RSC / Client Component
+    participant SRV as tRPC API (Fastify)
+    participant DB as PostgreSQL
+    UI->>SRV: mutation addToCart(productId)
+    SRV-->>DB: INSERT cart_items
+    DB-->>SRV: success row
+    SRV-->>UI: {cartCount: 3}
+    Note over UI: Toast (role="status")"Added to cart!"
+```
+
+---
+
+## 3️⃣ Auth Flow: MFA & Session Creation
+
+<small>Output: **auth-mfa.svg**</small>
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant NA as NextAuth
+    participant PR as Prisma DB
+    C->>NA: POST /auth/callback (credentials)
+    NA-->>PR: SELECT user, password_hash
+    PR-->>NA: user row
+    alt MFA enabled
+      NA-->>C: redirect /auth/mfa-challenge
+      C->>NA: POST /auth/mfa-verify(code)
+      NA-->>PR: totp.check()
+      PR-->>NA: valid
+    end
+    NA-->>C: Set-Cookie session=<jwt>
+    C->>C: redirect /dashboard
+```
+
+---
+
+## 4️⃣ Modal Lifecycle & Focus Trap
+
+<small>Output: **modal-focus.svg**</small>
+
+```mermaid
+stateDiagram-v2
+    [*] --> Closed
+    Closed --> Opening : onClick triggerBtn
+    Opening --> Open : mount & focus first element
+    Open --> Closing : Esc / click backdrop / closeBtn
+    Closing --> Closed : unmount & returnFocus
+```
+
+---
+
+## 5️⃣ CI/CD Pipeline Overview
+
+<small>Output: **ci-cd.svg**</small>
+
+```mermaid
+graph LR
+    code[Developer Push] --> pr[GitHub Pull Request]
+    pr -->|Lint + Unit| ci1[Cypress Component]
+    ci1 --> ci2[Cypress E2E + a11y]
+    ci2 --> ci3[Lighthouse‑CI]
+    ci3 --> merge[Merge Allowed?]
+    merge -->|Yes| prod[Deploy → ECS]
+    merge -->|No| fix[Fix & Re‑push]
+```
+
+---
+
+> **Next Step:** After exporting each `.svg`, commit them to `/flowcharts` with the same filenames indicated above.

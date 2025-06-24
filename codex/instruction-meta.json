@@ -1,0 +1,55 @@
+{
+  "version": "1.0",
+  "description": "Machine‑readable routing & convention map for AI coding agents (Codex, GPT‑4o)",
+
+  "folderRoutes": {
+    "newSharedHook": "packages/hooks",
+    "newUIComponent": "packages/ui",
+    "utilityFunction": "packages/utils",
+    "sharedType": "packages/types",
+    "rscPage": "apps/web/src/routes",
+    "apiRouter": "apps/api/src/routers",
+    "cypressSpec": "cypress/e2e",
+    "modalFix": "packages/ui/src/components",
+    "wireframeMd": "wireframes",
+    "flowchartSvg": "flowcharts"
+  },
+
+  "namingRules": {
+    "file": "kebab-case",
+    "component": "PascalCase",
+    "hook": "use[X].ts",
+    "util": "verb-noun.ts",
+    "envVarClient": "NEXT_PUBLIC_*",
+    "envVarServer": "APP_*"
+  },
+
+  "adrMap": {
+    "ADR-001": "Monorepo via Turborepo",
+    "ADR-002": "React 19 + Vite RSC",
+    "ADR-003": "Tailwind v4 (no PostCSS)",
+    "ADR-004": "NextAuth (Creds + MagicLink + MFA)",
+    "ADR-005": "Cypress + axe mandatory",
+    "ADR-006": "tRPC + Zod API"
+  },
+
+  "commitHooks": {
+    "preCommit": "ADR date auto‑sync",
+    "prePush": "gitleaks secret scanner"
+  },
+
+  "a11y": {
+    "ruleZero": true,
+    "axeRunOnly": ["wcag2a", "wcag2aa"],
+    "lighthouseMinScore": 100
+  },
+
+  "ciMatrix": [
+    "lint-typecheck",
+    "unit-component",
+    "e2e-a11y",
+    "secret-scan",
+    "lighthouse",
+    "docker-deploy"
+  ]
+}

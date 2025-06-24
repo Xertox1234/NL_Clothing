@@ -1,0 +1,67 @@
+name: code-coverage
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: ⬇️ Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🟢 Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: 🔧 Setup PNPM 8
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+          run_install: false
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      # ---------------- Vitest Coverage ----------------
+      - name: 🧪 Run Vitest with coverage
+        run: pnpm exec vitest run --coverage --coverage.reporter=json
+
+      # ---------------- Cypress Coverage ----------------
+      - name: ⚛️ Run Cypress Component Tests with coverage
+        run: |
+          # Ensure coverage plugin is enabled via env var
+          pnpm exec cypress run-ct --browser chrome --env codeCoverage=true
+
+      - name: 🐢 Run Cypress E2E (instrumented) with coverage
+        run: pnpm exec cypress run --env codeCoverage=true,coverage=true
+
+      # ---------------- Merge Coverage ----------------
+      - name: 📊 Merge coverage & generate lcov
+        run: |
+          pnpm dlx nyc report --reporter=lcov --report-dir ./coverage
+          pnpm dlx nyc report --reporter=text-summary
+
+      - name: 📤 Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov
+          path: coverage/lcov.info
+
+      - name: ☂️ Upload to Codecov & comment PR
+        uses: codecov/codecov-action@v3
+        with:
+          files: coverage/lcov.info
+          flags: unit,e2e
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}

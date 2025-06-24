@@ -1,0 +1,54 @@
+name: e2e-a11y
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  e2e-a11y:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇️  Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: 🔧 Setup PNPM 8
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+          run_install: false
+
+      - name: 📦 Install dependencies (pnpm i)
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: 🛠  Bootstrap stack (codex-startup)
+        run: bash codex/codex-startup.sh
+
+      - name: 🚀 Start dev servers (web + api)
+        run: |
+          pnpm dev &
+          npx wait-on http://localhost:3000
+
+      - name: 🕷️ Cypress E2E + axe-core
+        uses: cypress-io/github-action@v5
+        with:
+          browser: chrome
+          command: pnpm exec cypress run --record --parallel
+          wait-on: 'http://localhost:3000'
+          wait-on-timeout: 180
+
+      - name: 🏷️ Upload Cypress artefacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-a11y-results
+          path: |
+            cypress/results
+            cypress/screenshots
+            cypress/videos

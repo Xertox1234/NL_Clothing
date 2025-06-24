@@ -1,0 +1,70 @@
+name: gen-charts
+
+on:
+  push:
+    paths:
+      - 'flowcharts/**'
+      - 'docs/**'
+      - '.github/workflows/gen-charts.yml'
+  workflow_dispatch:
+
+jobs:
+  mermaid-render:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ⬇️ Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🟢 Setup Node 20 (with PNPM cache)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: 🔧 Setup PNPM 8
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+          run_install: false
+
+      - name: 🚀 Install mermaid‑cli
+        run: pnpm dlx @mermaid-js/mermaid-cli@10 -h
+
+      - name: 🖼️ Render mermaid code-blocks → SVG
+        run: |
+          mkdir -p flowcharts
+          npx mmdc -i flowcharts/system-flows.md -o /tmp/tmp.svg || true # ensure cli ready
+          node <<'NODE'
+          import { promises as fs } from 'fs';
+          import { execSync } from 'child_process';
+          const mdFiles = ['flowcharts/system-flows.md'];
+          for (const file of mdFiles) {
+            const text = await fs.readFile(file, 'utf8');
+            const blocks = [...text.matchAll(/```mermaid([\s\S]*?)```/g)].map(m=>m[1]);
+            let idx=0;
+            for (const code of blocks) {
+              const out = `flowcharts/auto-${idx++}.svg`;
+              await fs.writeFile(`/tmp/snippet.mmd`, code);
+              execSync(`npx mmdc -i /tmp/snippet.mmd -o ${out}`);
+              console.log('Rendered', out);
+            }
+          }
+          NODE
+
+      - name: 🔍 Check git diff for stale diagrams
+        run: |
+          if ! git diff --quiet flowcharts; then
+            echo "❌ Mermaid SVGs out of date. Run CI script locally or commit generated SVGs.";
+            git status flowcharts --short;
+            exit 1;
+          fi
+
+      - name: 📤 Upload generated SVGs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: outdated-svg
+          path: flowcharts/*.svg

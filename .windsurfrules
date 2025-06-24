@@ -1,0 +1,89 @@
+Architecture & File Placement
+Place new frontend views under /apps/web/src/pages
+
+Create reusable components in /packages/ui and import them across the app
+
+Add custom hooks to /packages/hooks
+
+Put all shared logic (utilities, types, constants) in /packages
+
+Never write logic or components directly in /apps/web/src/components if a shared version can be created
+
+Component & Code Style
+Use React functional components only; class components are disallowed
+
+All components must be written in TypeScript with strict mode enabled
+
+Naming conventions:
+
+Component files: PascalCase.tsx
+
+Utility files: camelCase.ts
+
+Folders: kebab-case
+
+Use JSX with implicit returns when appropriate
+
+Use React Server Components (RSC) only for non-interactive views or static-heavy content
+
+Tailwind & Styling
+Use Tailwind CSS v4 for all styling
+
+Do not use PostCSS; Tailwind 4 requires no custom PostCSS config
+
+Use utility-first class composition; if utility chains grow long, use @apply in component-level CSS
+
+Reuse utility classes from global config or design tokens when available
+
+Accessibility Rules
+All HTML must conform to WCAG 2.1 AA guidelines
+
+Use semantic HTML elements (<nav>, <main>, <header>, etc.)
+
+Ensure all interactive elements are accessible by keyboard
+
+Use aria-* attributes where appropriate:
+
+When building custom components
+
+When augmenting screen reader accessibility
+
+Prefer native HTML elements (e.g., <button>, <label>) over div or span for interactive features
+
+Testing Expectations
+All UI components must be testable with Cypress and axe-core
+
+Every page and component must be able to pass automated accessibility testing
+
+Use @testing-library/react for unit tests
+
+Write at least one test case for every non-trivial logic block or interaction
+
+Agent Behavior
+Prioritize reuse of existing utilities, components, and patterns before creating new ones
+
+Comment code only when the logic is non-obvious or deviates from convention
+
+Ask for clarification when:
+
+Business rules are undefined
+
+Component functionality overlaps with existing modules
+
+A feature seems redundant or ambiguous
+
+Tooling & DevOps
+Use Vite for frontend builds
+
+Use tRPC for API communication
+
+Ensure all code is compatible with CI/CD workflows
+
+Monitor performance and accessibility using Lighthouse CI
+
+Security & Developer Experience
+Always validate inputs on both the frontend and backend
+
+API contracts must be strongly typed using tools like zod and tRPC
+
+All runtime errors should be captured and logged using a monitoring tool like Sentry

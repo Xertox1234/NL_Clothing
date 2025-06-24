@@ -1,0 +1,58 @@
+name: semantic-release
+
+on:
+  push:
+    branches: [main]
+    # Run only when commits include a Conventional Commit with `feat`/`fix`/`perf` etc.
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # create tags / releases
+      issues: write     # comment on issues
+      pull-requests: write  # comment on PRs
+
+    steps:
+      - name: ⬇️ Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🟢 Setup Node 20 (cache pnpm)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: 🔧 Setup PNPM 8
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+          run_install: false
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      # --------------------------------------
+      # Semantic Release — auto version, tag & changelog
+      # --------------------------------------
+      - name: 🚀 Run semantic-release
+        uses: cycjimmy/semantic-release-action@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          semantic_version: 19.0.5  # lock semantic-release version
+          extra_plugins: |
+            @semantic-release/changelog
+            @semantic-release/git
+            @semantic-release/exec
+
+      # semantic-release automatically:
+      # • analyses commit messages (Conventional Commits)
+      # • bumps version, creates Git tag (e.g., v1.2.3)
+      # • generates CHANGELOG.md commit & GitHub Release
+      # • triggers downstream workflows relying on tags:
+      #     • sentry-release.yml (sourcemaps upload)
+      #     • docker-deploy.yml (build & scan images on tag push)

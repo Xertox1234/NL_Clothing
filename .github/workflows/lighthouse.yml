@@ -1,0 +1,54 @@
+name: lighthouse-a11y
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  lighthouse-ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ⬇️  Checkout repo
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: 🔧 Setup PNPM 8
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+          run_install: false
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: 🏗️ Build web app
+        run: pnpm --filter apps/web build
+
+      - name: 🚀 Serve web app (static preview)
+        run: |
+          pnpm exec serve -s apps/web/dist -l 4173 &
+          npx wait-on http://localhost:4173
+
+      - name: 🔍 Lighthouse CI (a11y score must be 100)
+        uses: treosh/lighthouse-ci-action@v11
+        with:
+          urls: 'http://localhost:4173'
+          configPath: 'lighthouserc.json'
+          uploadArtifacts: true
+          temporaryPublicStorage: false
+
+      - name: ✅ Enforce Accessibility
+        run: |
+          score=$(cat .lighthouseci/manifest.json | jq -r '.[0].summary.accessibility')
+          echo "Accessibility score: $score"
+          if [ "${score%.*}" -lt 100 ]; then
+            echo "::error ::Accessibility score below 100. Failing build."
+            exit 1
+          fi

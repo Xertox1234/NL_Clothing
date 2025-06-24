@@ -1,0 +1,43 @@
+name: lint-typecheck
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  lint-typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇️  Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: 🔧 Setup PNPM 8
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+          run_install: false
+
+      - name: 📦 Install dependencies (pnpm i)
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: 🧹 ESLint
+        run: pnpm lint
+
+      - name: 🔎 TypeScript — noEmit
+        run: pnpm exec tsc --noEmit
+
+      - name: 🏷️ Upload ESLint & tsc results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-typecheck-logs
+          path: |
+            .eslint*log
+            tsconfig.tsbuildinfo

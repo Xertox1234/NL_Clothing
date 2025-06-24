@@ -1,0 +1,51 @@
+name: unit-component
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  unit-component:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ⬇️  Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: 🔧 Setup PNPM 8
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+          run_install: false
+
+      - name: 📦 Install dependencies (pnpm i)
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      # ----------------- Vitest -----------------
+      - name: 🧪 Run Vitest unit tests
+        run: pnpm exec vitest run --coverage
+
+      # ----------------- Cypress Component Testing -----------------
+      - name: ⚛️ Run Cypress Component Tests (React 19)
+        uses: cypress-io/github-action@v5
+        with:
+          command: pnpm exec cypress run-ct --browser chrome
+          start: pnpm dev
+          wait-on: 'http://localhost:3000'
+          wait-on-timeout: 120
+
+      - name: 🏷️ Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-component-reports
+          path: |
+            coverage
+            cypress/results

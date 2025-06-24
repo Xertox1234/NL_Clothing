@@ -1,0 +1,57 @@
+name: sentry-release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"  # Run on semver tags like v1.2.3
+
+jobs:
+  sentry-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: ⬇️ Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🟢 Setup Node 20 (pnpm cache)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: 🔧 Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+          run_install: false
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: 🏷️ Extract version & commit SHA
+        id: vars
+        run: |
+          echo "::set-output name=version::${GITHUB_REF#refs/tags/}"
+          echo "::set-output name=sha::${GITHUB_SHA}"
+
+      - name: 🛠️ Build production bundles
+        run: pnpm build  # ensures sourcemaps exist
+
+      - name: ☁️ Create Sentry release & upload sourcemaps
+        uses: getsentry/action-release@v2
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        with:
+          environment: production
+          version: ${{ steps.vars.outputs.version }}
+          sourcemaps: |
+            apps/web/dist/assets
+            apps/api/dist
+          set_commits: "auto"
+          url_prefix: "~/static/js"

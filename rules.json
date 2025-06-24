@@ -1,0 +1,78 @@
+{
+    "architecture": {
+      "frontendViews": "/apps/web/src/pages",
+      "sharedComponents": "/packages/ui",
+      "customHooks": "/packages/hooks",
+      "sharedLogic": ["/packages/utils", "/packages/types", "/packages/constants"],
+      "restrictions": [
+        "Do not place reusable logic inside /apps/web/src/components",
+        "Use modular monorepo conventions consistently"
+      ]
+    },
+    "codeStyle": {
+      "language": "TypeScript",
+      "typeSafety": "strict",
+      "reactSyntax": "functional",
+      "componentType": "stateless",
+      "namingConventions": {
+        "components": "PascalCase.tsx",
+        "utilities": "camelCase.ts",
+        "folders": "kebab-case"
+      },
+      "reactServerComponents": {
+        "useOnlyFor": [
+          "Non-interactive views",
+          "Static or data-heavy content"
+        ]
+      }
+    },
+    "styling": {
+      "framework": "TailwindCSS",
+      "version": "4",
+      "postcss": false,
+      "conventions": [
+        "Use utility-first class composition",
+        "Use @apply when utility chains become long",
+        "Reuse design tokens and config utilities"
+      ]
+    },
+    "accessibility": {
+      "standard": "WCAG 2.1 AA",
+      "semanticHtml": true,
+      "keyboardNavigation": true,
+      "ariaUsage": "Required for custom or complex interactive components",
+      "preferNativeControls": true
+    },
+    "testing": {
+      "tools": ["Cypress", "axe-core", "@testing-library/react"],
+      "requirements": {
+        "accessibilityTestable": true,
+        "testCoverage": "All logic must have at least one test",
+        "componentTests": true
+      }
+    },
+    "agentBehavior": {
+      "reuseFirst": true,
+      "commenting": "Only for non-obvious logic",
+      "clarificationTriggers": [
+        "Undefined business logic",
+        "Ambiguous functionality",
+        "Redundant or overlapping features"
+      ]
+    },
+    "tooling": {
+      "frontend": "Vite",
+      "api": "tRPC",
+      "ciCompatibility": true,
+      "monitoring": ["Lighthouse CI", "Sentry"]
+    },
+    "security": {
+      "inputValidation": {
+        "frontend": true,
+        "backend": true
+      },
+      "apiContracts": "Typed using zod and tRPC",
+      "errorMonitoring": "Sentry"
+    }
+  }
+  

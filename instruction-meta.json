@@ -1,0 +1,48 @@
+{
+    "agentName": "Codex Assistant",
+    "version": "1.0.0",
+    "projectName": "Accessible E-commerce Monorepo",
+    "entryFiles": [
+      "README.md",
+      "agents.md",
+      "rules.json"
+    ],
+    "ruleSet": "rules.json",
+    "documentation": {
+      "description": "This project is built using a modular monorepo architecture with React 19, Node.js, Tailwind 4, and type-safe APIs via tRPC. It prioritizes accessibility (WCAG 2.1 AA), testability (Cypress + axe), and intelligent code assistance (via Codex or Windsurf).",
+      "agentPurpose": "Enhance developer experience by assisting with code generation, file creation, component reuse, documentation, and accessibility enforcement according to the rules defined in rules.json."
+    },
+    "paths": {
+      "frontendRoot": "/apps/web",
+      "apiRoot": "/apps/api",
+      "sharedPackages": "/packages",
+      "agentMemory": "/codex/memory-notes.md"
+    },
+    "fileGuidelines": {
+      "createOnlyIn": [
+        "/apps/web/src/pages",
+        "/packages/ui",
+        "/packages/hooks",
+        "/packages/utils"
+      ],
+      "avoidCreatingIn": [
+        "/apps/web/src/components",
+        "/node_modules"
+      ]
+    },
+    "codexBehavior": {
+      "initScript": "codex-startup.sh",
+      "memoryStrategy": "load rules.json first, then agents.md",
+      "suggestionLogging": {
+        "enabled": true,
+        "path": "/logs/codex-suggestions.log"
+      }
+    },
+    "compliance": {
+      "accessibilityStandard": "WCAG 2.1 AA",
+      "testCoverage": "100%",
+      "frontendBuildTool": "Vite",
+      "codeMonitoring": ["Lighthouse CI", "Sentry"]
+    }
+  }
+  
