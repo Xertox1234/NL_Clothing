@@ -1,0 +1,32 @@
+coverage:
+  status:
+    project:
+      default:
+        # basic settings
+        target: 90%
+        threshold: 1%
+    patch:
+      default:
+        # basic settings
+        target: 80%
+        threshold: 1%
+
+  precision: 2
+  round: down
+  range: "70...100"
+
+parsers:
+  javascript:
+    enable_partials: yes
+
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default
+  require_changes: false
+  require_base: no
+  require_head: no
+
+ignore:
+  - "**/*.stories.tsx"
+  - "**/jest.setup.js"
+  - "**/jest.config.js"

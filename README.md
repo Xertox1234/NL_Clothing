@@ -7,6 +7,8 @@
 [![Secret Scan](https://github.com/Xertox1234/NL_Clothing/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/Xertox1234/NL_Clothing/actions/workflows/secret-scan.yml)
 [![Docker Build + Scan](https://github.com/Xertox1234/NL_Clothing/actions/workflows/docker-deploy.yml/badge.svg)](https://github.com/Xertox1234/NL_Clothing/actions/workflows/docker-deploy.yml)
 [![Coverage](https://codecov.io/gh/Xertox1234/NL_Clothing/branch/main/graph/badge.svg)](https://codecov.io/gh/Xertox1234/NL_Clothing)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Xertox1234_NL_Clothing&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Xertox1234_NL_Clothing)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=Xertox1234_NL_Clothing&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Xertox1234_NL_Clothing)
 [![Storybook](https://img.shields.io/badge/Storybook-Browse-blue?logo=storybook)](https://xertox1234.github.io/NL_Clothing/)
 
 > **Tagline:** A WCAG-first, AI-assisted, React 19 + Node/tRPC monorepo for modern accessible online stores.

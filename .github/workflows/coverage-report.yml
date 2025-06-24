@@ -1,0 +1,113 @@
+name: Code Coverage Report
+
+# Can be triggered manually from GitHub Actions tab
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to run coverage on'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+        - development
+        - production
+
+jobs:
+  coverage:
+    name: Generate coverage reports
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8.15.1
+          run_install: false
+      
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+      
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+      
+      - name: Install dependencies
+        run: pnpm install
+      
+      # Generate coverage reports for all packages
+      - name: Run tests with coverage
+        run: pnpm test -- --coverage
+      
+      # Install additional dependencies for reporting
+      - name: Install reporting dependencies
+        run: pnpm add -g jest-sonar-reporter codecov
+      
+      # Convert Jest coverage to SonarCloud format
+      - name: Generate SonarCloud test report
+        run: |
+          npx jest-sonar-reporter
+      
+      # Upload to Codecov
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: ./coverage
+          fail_ci_if_error: false
+          flags: all
+          verbose: true
+      
+      # SonarCloud scan
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      
+      # Generate accessibility reports
+      - name: Generate accessibility reports
+        run: pnpm a11y:report
+        continue-on-error: true
+      
+      # Generate summary
+      - name: Coverage Summary
+        run: |
+          echo "## Coverage Report Summary" >> $GITHUB_STEP_SUMMARY
+          echo "### Overall Coverage" >> $GITHUB_STEP_SUMMARY
+          cat coverage/coverage-summary.json | jq -r '"| Category | Coverage |", "| ------- | ------- |", "| Statements | \(.total.statements.pct)% |", "| Branches | \(.total.branches.pct)% |", "| Functions | \(.total.functions.pct)% |", "| Lines | \(.total.lines.pct)% |"' >> $GITHUB_STEP_SUMMARY
+          
+          echo "### Package Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "| Package | Coverage |" >> $GITHUB_STEP_SUMMARY
+          echo "| ------- | ------- |" >> $GITHUB_STEP_SUMMARY
+          
+          for pkg in $(find packages -maxdepth 1 -type d | grep -v "^packages$"); do
+            name=$(basename $pkg)
+            if [ -f "$pkg/coverage/coverage-summary.json" ]; then
+              cov=$(cat $pkg/coverage/coverage-summary.json | jq -r '.total.lines.pct')
+              echo "| $name | $cov% |" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+      
+      # Upload coverage artifacts
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-reports
+          path: coverage/

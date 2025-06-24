@@ -46,6 +46,10 @@ export interface ButtonProps {
    * Full width button
    */
   fullWidth?: boolean;
+  /**
+   * Disabled state
+   */
+  disabled?: boolean;
 }
 
 export const Button = ({
@@ -58,6 +62,7 @@ export const Button = ({
   className = '',
   ariaLabel,
   fullWidth = false,
+  disabled = false,
 }: ButtonProps) => {
   const baseStyles = "rounded-full border border-solid transition-colors flex items-center justify-center gap-2 font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5";
   
@@ -69,7 +74,8 @@ export const Button = ({
   
   const widthStyles = fullWidth ? "w-full" : "sm:w-auto";
   
-  const combinedClassName = `${baseStyles} ${variantStyles[variant]} ${widthStyles} ${className}`;
+  const disabledStyles = disabled ? "opacity-50 cursor-not-allowed pointer-events-none" : "";
+  const combinedClassName = `${baseStyles} ${variantStyles[variant]} ${widthStyles} ${disabledStyles} ${className}`;
   
   const content = (
     <>
@@ -87,7 +93,7 @@ export const Button = ({
     </>
   );
 
-  if (href) {
+  if (href && !disabled) {
     return (
       <a
         href={href}
@@ -107,6 +113,7 @@ export const Button = ({
       className={combinedClassName}
       onClick={onClick}
       aria-label={ariaLabel}
+      disabled={disabled}
     >
       {content}
     </button>

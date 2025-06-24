@@ -1,0 +1,176 @@
+name: Testing
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8.15.1
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type check
+        run: pnpm turbo run typecheck
+        
+      # Run package-specific tests
+      - name: Test trpc-client package
+        run: pnpm --filter @next-level-clothing/trpc-client test
+        
+      - name: Test hooks package
+        run: pnpm --filter @next-level-clothing/hooks test
+        
+      - name: Test UI package
+        run: pnpm --filter @next-level-clothing/ui test
+
+      # Run all tests
+      - name: Run all unit and integration tests
+        run: pnpm test
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+
+  accessibility:
+    name: Accessibility Tests
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8.15.1
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Start web app
+        run: pnpm dev &
+        env:
+          PORT: 3000
+      
+      - name: Wait for app to start
+        run: |
+          echo "Waiting for app to start..."
+          timeout 60 bash -c 'until curl -s http://localhost:3000 > /dev/null; do sleep 1; done'
+          echo "App is up and running!"
+
+      # Run component-level accessibility tests
+      - name: Run UI component accessibility tests
+        run: pnpm --filter @next-level-clothing/ui test:a11y
+      
+      # Run axe core tests on the complete application
+      - name: Run full app accessibility audit
+        run: pnpm a11y
+
+      # Generate accessibility reports in various formats
+      - name: Generate accessibility report
+        run: pnpm a11y:report
+        
+      # Store reports as artifacts
+      - name: Upload accessibility reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: accessibility-reports
+          path: .lighthouseci/
+      
+      # Generate PR comment with accessibility results
+      - name: Create accessibility report file
+        run: |
+          mkdir -p ./accessibility-report
+          echo "$(cat .lighthouseci/summary.json 2>/dev/null || echo '{}')" > ./accessibility-report/summary.json
+
+      - name: Generate accessibility report markdown
+        if: github.event_name == 'pull_request'
+        run: |
+          score=$(cat ./accessibility-report/summary.json | jq -r '.accessibility // "N/A"')
+          echo "# Accessibility Results" > ./accessibility-report/result.md
+          echo "" >> ./accessibility-report/result.md
+          echo "**Score**: ${score}/100" >> ./accessibility-report/result.md
+          echo "" >> ./accessibility-report/result.md
+          echo "[View full report](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})" >> ./accessibility-report/result.md
+      
+      - name: Comment PR with accessibility results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            try {
+              const reportPath = './accessibility-report/result.md';
+              if (fs.existsSync(reportPath)) {
+                const reportContent = fs.readFileSync(reportPath, 'utf8');
+                await github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: reportContent
+                });
+              }
+            } catch (error) {
+              console.error('Error creating PR comment:', error);
+            }
